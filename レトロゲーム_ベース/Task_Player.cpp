@@ -66,12 +66,13 @@ namespace  Player
 		pos.y += speed.y;
 
 		//カメラの挙動
-		ML::Box2D copyPlayer = ge->camera2D.OffsetCopy(pos);
-		if (speed.x > 0 /*&& copyPlayer.x > 100 && copyPlayer.x < 240*/)
+		if (speed.x > 0)
 		{
-			ge->camera2D.x -= speed.x;
-			if (ge->camera2D.x > 0) { ge->camera2D.x = 0; }
-			if (ge->camera2D.x < -213 * 16 + ge->camera2D.w) { ge->camera2D.x = -213 * 16 + ge->camera2D.w; }
+			ML::Box2D copyPlayer = ge->camera2D.OffsetCopy(pos); //画面上でのプレイヤーの座標
+			ge->camera2D.x -= (copyPlayer.x / (240 / speed.x));
+
+			if (ge->camera2D.x > 0) { ge->camera2D.x = 0; } //左端
+			if (ge->camera2D.x < -213 * 16 + ge->camera2D.w) { ge->camera2D.x = -213 * 16 + ge->camera2D.w; } //右端
 		}
 	}
 	//-------------------------------------------------------------------

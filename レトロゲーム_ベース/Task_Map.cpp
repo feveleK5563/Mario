@@ -37,6 +37,10 @@ namespace  Map
 		for (int y = 0; y < 14; ++y)
 			for (int x = 0; x < 213; ++x)
 				mapData.map[y][x] = 0;
+		mapData.sizeX = 0;
+		mapData.sizeY = 0;
+		mapData.hitbase = ML::Box2D(0, 0, 0, 0);
+
 		//マップチップ情報の初期化
 		for (int y = 0; y < 28; ++y)
 			for (int x = 0; x < 33; ++x)
@@ -108,6 +112,35 @@ namespace  Map
 		//ファイルを閉じる
 		fin.close();
 		return true;
+	}
+	//-------------------------------------------------------------------
+	//当たり判定
+	bool Object::CheckHit(const ML::Box2D& hit)
+	{
+		RECT r = { hit.x, hit.y, hit.x + hit.w, hit.y + hit.h };
+		//矩形がマップ外に出ていたら丸め込みを行う
+		RECT m = {
+			mapData.hitbase.x,
+			mapData.hitbase.y,
+			mapData.hitbase.x + mapData.hitbase.w,
+			mapData.hitbase.y + mapData.hitbase.h, };
+		if (r.left < m.left) { r.left = m.left; }
+		if (r.right < m.right) { r.right = m.right; }
+		if (r.top < m.top) { r.top = m.top; }
+		if (r.bottom < m.bottom) { r.bottom = m.bottom; }
+
+		//ループ範囲調整
+		int sx, sy, ex, ey;
+		sx = r.right / 16;
+		sy = r.top / 16;
+		ex = (r.right - 1) / 16;
+		ey = (r.bottom - 1) / 16;
+
+		//範囲内の障害物を探す
+		for (int y = 0; y <= ey; ++y)
+			for (int x = sx; x <= ex; ++x)
+				if (mapData.map[y][x])
+					return true;
 	}
 
 	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★

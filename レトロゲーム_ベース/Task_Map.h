@@ -56,7 +56,9 @@ namespace  Map
 		};
 		MapData mapData;
 
+		//マップファイル読み込み
 		bool Load(const string&);
-		//bool CheckHit(const ML::Box2D&);
+		//当たり判定
+		bool CheckHit(const ML::Box2D&);
 	};
 }
