@@ -8,7 +8,7 @@
 namespace  Map
 {
 	//タスクに割り当てるグループ名と固有名
-	const  string  defGroupName("本編");	//グループ名
+	const  string  defGroupName("フィールド");	//グループ名
 	const  string  defName("マップ");	//タスク名
 	//-------------------------------------------------------------------
 	class  Resource
@@ -51,7 +51,7 @@ namespace  Map
 		{
 			int map[14][213];
 			int sizeX, sizeY;
-			ML::Box2D hitbase;
+			ML::Box2D hitBase;
 			ML::Box2D chip[33 * 28];
 		};
 		MapData mapData;

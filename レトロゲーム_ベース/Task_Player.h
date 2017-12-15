@@ -3,7 +3,7 @@
 //-------------------------------------------------------------------
 //プレイヤ（仮
 //-------------------------------------------------------------------
-#include "GameEngine_Ver3_7.h"
+#include "BChara.h"
 
 namespace  Player
 {
@@ -26,7 +26,7 @@ namespace  Player
 		string		imageName;
 	};
 	//-------------------------------------------------------------------
-	class  Object : public  BTask
+	class  Object : public  BChara
 	{
 	//変更不可◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
 	public:
@@ -48,9 +48,7 @@ namespace  Player
 	public:
 		//追加したい変数・メソッドはここに追加する
 		string		controllerName;
-		POINT		speed;
-		POINT		pos;
-
 		void ChangeSpeed();
+		void ScrollCamera();
 	};
 }

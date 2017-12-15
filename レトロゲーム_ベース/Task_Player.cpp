@@ -3,6 +3,7 @@
 //-------------------------------------------------------------------
 #include  "MyPG.h"
 #include  "Task_Player.h"
+#include  "Task_Map.h"
 
 namespace  Player
 {
@@ -30,15 +31,15 @@ namespace  Player
 		//スーパークラス初期化
 		__super::Initialize(defGroupName, defName, true);
 		//リソースクラス生成orリソース共有
-		this->res = Resource::Create();
+		res = Resource::Create();
 
 		//★データ初期化
-		this->controllerName = "P1";
-		this->render2D_Priority[1] = 0.5f;
-		this->speed.x = 0;
-		this->speed.y = 0;
-		this->pos.x = 480 / 2;
-		this->pos.y = 270 * 2 / 3;
+		controllerName = "P1";
+		render2D_Priority[1] = 0.5f;
+		pos.x = 480 / 2;
+		pos.y = 270 * 2 / 3;
+		moveVec.x = 0;
+		moveVec.y = 0;
 
 		//★タスクの生成
 
@@ -61,19 +62,11 @@ namespace  Player
 	//「更新」１フレーム毎に行う処理
 	void  Object::UpDate()
 	{
+		//プレイヤーの動作
 		Object::ChangeSpeed();
-		pos.x += speed.x;
-		pos.y += speed.y;
 
 		//カメラの挙動
-		if (speed.x > 0)
-		{
-			ML::Box2D copyPlayer = ge->camera2D.OffsetCopy(pos); //画面上でのプレイヤーの座標
-			ge->camera2D.x -= (copyPlayer.x / (240 / speed.x));
-
-			if (ge->camera2D.x > 0) { ge->camera2D.x = 0; } //左端
-			if (ge->camera2D.x < -213 * 16 + ge->camera2D.w) { ge->camera2D.x = -213 * 16 + ge->camera2D.w; } //右端
-		}
+		Object::ScrollCamera();
 	}
 	//-------------------------------------------------------------------
 	//「２Ｄ描画」１フレーム毎に行う処理
@@ -83,26 +76,46 @@ namespace  Player
 		ML::Box2D  draw(-32, -16, 64, 32);
 		draw.Offset(this->pos);
 		ML::Box2D  src(0, 0, 64, 32);
-		draw.Offset(ge->camera2D.x, ge->camera2D.y);
+		draw.Offset(-ge->camera2D.x, -ge->camera2D.y);
 		DG::Image_Draw(this->res->imageName, draw, src);
 	}
 	//-------------------------------------------------------------------
 	//スピードの変化
 	void Object::ChangeSpeed()
 	{
+		//コントローラから入力情報を受け取る
 		DI::VGamePad in = DI::GPad_GetState(controllerName);
 
-		if (in.LStick.L.on || (!in.LStick.R.on && speed.x > 0)) { --speed.x; }
-		if (in.LStick.R.on || (!in.LStick.L.on && speed.x < 0)) { ++speed.x; }
+		if (in.LStick.L.on || (!in.LStick.R.on && moveVec.x > 0)) { --moveVec.x; }
+		if (in.LStick.R.on || (!in.LStick.L.on && moveVec.x < 0)) { ++moveVec.x; }
 
-		if (in.LStick.U.on || (!in.LStick.D.on && speed.y > 0)) { --speed.y; }
-		if (in.LStick.D.on || (!in.LStick.U.on && speed.y < 0)) { ++speed.y; }
+		if (in.LStick.U.on || (!in.LStick.D.on && moveVec.y > 0)) { --moveVec.y; }
+		if (in.LStick.D.on || (!in.LStick.U.on && moveVec.y < 0)) { ++moveVec.y; }
 
-		if (speed.x >  3) { speed.x =  3; }
-		if (speed.x < -3) { speed.x = -3; }
-		if (speed.y >  3) { speed.y =  3; }
-		if (speed.y < -3) { speed.y = -3; }
+		//ちょっとずつ動かす
+		if (moveVec.x >  3) { moveVec.x =  3; }
+		if (moveVec.x < -3) { moveVec.x = -3; }
+		if (moveVec.y >  3) { moveVec.y =  3; }
+		if (moveVec.y < -3) { moveVec.y = -3; }
 
+		//当たり判定付きの動作
+		pos.x += moveVec.x;
+		pos.y += moveVec.y;
+	}
+
+	//-------------------------------------------------------------------
+	//カメラのスクロール
+	void Object::ScrollCamera()
+	{
+		if (moveVec.x > 0)
+		{
+			//画面上でのプレイヤーの座標
+			ML::Vec2 copyPlayer = { pos.x - ge->camera2D.x, pos.y - ge->camera2D.y };
+			ge->camera2D.x += int(moveVec.x * ((copyPlayer.x / 60.f) / (240 / 60)));
+
+			if (ge->camera2D.x < 0) { ge->camera2D.x = 0; } //左端
+			if (ge->camera2D.x > 213 * 16 - ge->camera2D.w) { ge->camera2D.x = 213 * 16 - ge->camera2D.w; } //右端
+		}
 	}
 
 	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★

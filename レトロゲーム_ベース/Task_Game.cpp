@@ -32,7 +32,7 @@ namespace  Game
 		this->res = Resource::Create();
 
 		//★データ初期化
-		ge->camera2D = ML::Box2D(0, 48, 480, 270);
+		ge->camera2D = ML::Box2D(0, -48, 480, 270);
 
 		//★タスクの生成
 		//背景タスク
@@ -51,7 +51,8 @@ namespace  Game
 	{
 		//★データ＆タスク解放
 		ge->KillAll_G("本編");
-//		ge->KillAll_G("プレイヤ");
+		ge->KillAll_G("プレイヤ");
+		ge->KillAll_G("フィールド");
 
 		if (!ge->QuitFlag() && this->nextTaskCreate) {
 			//★引き継ぎタスクの生成

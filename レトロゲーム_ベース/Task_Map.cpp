@@ -39,7 +39,7 @@ namespace  Map
 				mapData.map[y][x] = 0;
 		mapData.sizeX = 0;
 		mapData.sizeY = 0;
-		mapData.hitbase = ML::Box2D(0, 0, 0, 0);
+		mapData.hitBase = ML::Box2D(0, 0, 16, 16);
 
 		//マップチップ情報の初期化
 		for (int y = 0; y < 28; ++y)
@@ -73,15 +73,48 @@ namespace  Map
 	//「２Ｄ描画」１フレーム毎に行う処理
 	void  Object::Render2D_AF()
 	{
-		for (int y = 0; y < 14; ++y)
+		//カメラが完全にマップ外にある場合は描画を取りやめる
+		if (!mapData.hitBase.Hit(ge->camera2D))
+			return;
+
+		//カメラとマップが重なっている範囲だけの矩形を作る
+		RECT cm = {	//カメラの矩形
+			ge->camera2D.x,
+			ge->camera2D.y,
+			ge->camera2D.x + ge->camera2D.w,
+			ge->camera2D.y + ge->camera2D.h
+		};
+		RECT mp = {	//マップの矩形
+			mapData.hitBase.x,
+			mapData.hitBase.y,
+			mapData.hitBase.x + mapData.hitBase.w,
+			mapData.hitBase.y + mapData.hitBase.h
+		};
+		//2つの矩形の重なっている範囲だけの矩形を求める
+		RECT isr = {
+			max(cm.left, mp.left),
+			max(cm.top, mp.top),
+			min(cm.right, mp.right),
+			min(cm.bottom, mp.bottom)
+		};
+
+		//ループ範囲を決定
+		int sx, sy, ex, ey;
+		sx = isr.left / 16;
+		sy = isr.top / 16;
+		ex = (isr.right - 1) / 16;
+		ey = (isr.bottom - 1) / 16;
+
+		//画面内の範囲だけ描画
+		for (int y = sy; y <= ey; ++y)
 		{
-			for (int x = 0; x < 213; ++x)
+			for (int x = sx; x <= ex; ++x)
 			{
 				if (mapData.map[y][x] == -1)
 					continue;
 
 				ML::Box2D draw(x * 16, y * 16, 16, 16);
-				draw.Offset(ge->camera2D.x, ge->camera2D.y);
+				draw.Offset(-ge->camera2D.x, -ge->camera2D.y);
 				DG::Image_Draw(res->imageName, draw, mapData.chip[mapData.map[y][x]]);
 			}
 		}
@@ -102,7 +135,7 @@ namespace  Map
 		DG::Image_Create(res->imageName, chipFilePath);
 
 		fin >> mapData.sizeX >> mapData.sizeY;
-		mapData.hitbase = ML::Box2D(0, 0, mapData.sizeX * 16, mapData.sizeY * 16);
+		mapData.hitBase = ML::Box2D(0, 0, mapData.sizeX * 16, mapData.sizeY * 16);
 
 		//配列にデータを取り込む
 		for (int y = 0; y < mapData.sizeY; ++y)
@@ -120,10 +153,10 @@ namespace  Map
 		RECT r = { hit.x, hit.y, hit.x + hit.w, hit.y + hit.h };
 		//矩形がマップ外に出ていたら丸め込みを行う
 		RECT m = {
-			mapData.hitbase.x,
-			mapData.hitbase.y,
-			mapData.hitbase.x + mapData.hitbase.w,
-			mapData.hitbase.y + mapData.hitbase.h, };
+			mapData.hitBase.x,
+			mapData.hitBase.y,
+			mapData.hitBase.x + mapData.hitBase.w,
+			mapData.hitBase.y + mapData.hitBase.h, };
 		if (r.left < m.left) { r.left = m.left; }
 		if (r.right < m.right) { r.right = m.right; }
 		if (r.top < m.top) { r.top = m.top; }
