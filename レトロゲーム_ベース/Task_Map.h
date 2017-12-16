@@ -51,8 +51,9 @@ namespace  Map
 		{
 			int map[14][213];
 			int sizeX, sizeY;
-			ML::Box2D hitBase;
-			ML::Box2D chip[33 * 28];
+			ML::Box2D	hitBase;
+			ML::Box2D	chip[33 * 28];
+			int			chipType[33 * 28];
 		};
 		MapData mapData;
 

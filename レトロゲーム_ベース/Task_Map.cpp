@@ -39,12 +39,25 @@ namespace  Map
 				mapData.map[y][x] = 0;
 		mapData.sizeX = 0;
 		mapData.sizeY = 0;
-		mapData.hitBase = ML::Box2D(0, 0, 16, 16);
+		mapData.hitBase = ML::Box2D(0, 0, 0, 0);
 
 		//マップチップ情報の初期化
-		for (int y = 0; y < 28; ++y)
-			for (int x = 0; x < 33; ++x)
+		fstream fin("./data/StageData/MapChipType.txt");
+		if (!fin)
+			return false;
+
+		int xMax, yMax;
+		fin >> xMax >> yMax;
+		for (int y = 0; y < yMax; ++y)
+		{
+			for (int x = 0; x < xMax; ++x)
+			{
 				mapData.chip[(y * 33) + x] = ML::Box2D(x * 16, y * 16, 16, 16);
+				fin >> mapData.chipType[(y * 33) + x];
+			}
+		}
+		fin.close();
+			
 
 		//★タスクの生成
 
@@ -128,11 +141,9 @@ namespace  Map
 		if (!fin)
 			return false;
 
-		//チップファイル名の読み込みと画像のロード
-		string chipFileName, chipFilePath;
+		//チップファイル名の読み込みと画像のロード(今回はResourceで行っているので不要)
+		string chipFileName;
 		fin >> chipFileName;
-		chipFilePath = "./data/image/" + chipFileName;
-		DG::Image_Create(res->imageName, chipFilePath);
 
 		fin >> mapData.sizeX >> mapData.sizeY;
 		mapData.hitBase = ML::Box2D(0, 0, mapData.sizeX * 16, mapData.sizeY * 16);
@@ -147,7 +158,7 @@ namespace  Map
 		return true;
 	}
 	//-------------------------------------------------------------------
-	//当たり判定
+	//当たり判定と動作
 	bool Object::CheckHit(const ML::Box2D& hit)
 	{
 		RECT r = { hit.x, hit.y, hit.x + hit.w, hit.y + hit.h };
@@ -157,23 +168,34 @@ namespace  Map
 			mapData.hitBase.y,
 			mapData.hitBase.x + mapData.hitBase.w,
 			mapData.hitBase.y + mapData.hitBase.h, };
-		if (r.left < m.left) { r.left = m.left; }
-		if (r.right < m.right) { r.right = m.right; }
-		if (r.top < m.top) { r.top = m.top; }
-		if (r.bottom < m.bottom) { r.bottom = m.bottom; }
+		if (r.left   < m.left)   { r.left   = m.left; }
+		if (r.top    < m.top)    { r.top    = m.top; }
+		if (r.right  > m.right)  { r.right  = m.right; }
+		if (r.bottom > m.bottom) { r.bottom = m.bottom; }
 
 		//ループ範囲調整
 		int sx, sy, ex, ey;
-		sx = r.right / 16;
+		sx = r.left / 16;
 		sy = r.top / 16;
 		ex = (r.right - 1) / 16;
-		ey = (r.bottom - 1) / 16;
-
+		ey = (r.bottom -1) / 16;
+		
 		//範囲内の障害物を探す
-		for (int y = 0; y <= ey; ++y)
+		for (int y = sy; y <= ey; ++y)
+		{
 			for (int x = sx; x <= ex; ++x)
-				if (mapData.map[y][x])
+			{
+				switch (mapData.chipType[mapData.map[y][x]])
+				{
+				case 0:
 					return true;
+
+				default:
+					continue;
+				}
+			}
+		}
+		return false;
 	}
 
 	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★

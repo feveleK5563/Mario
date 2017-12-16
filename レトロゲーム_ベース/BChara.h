@@ -17,6 +17,12 @@ public:
 	ML::Vec2	pos;		//キャラクタ位置
 	ML::Box2D	hitBase;	//当たり判定範囲
 	ML::Vec2	moveVec;	//移動ベクトル
+	int			moveCnt;	//行動カウンタ
+
+	//アニメーション
+	vector<ML::Box2D*>	charaChip;	//キャラクタの素材
+	int					animCnt;	//アニメーションカウンタ
+
 	//左右の向き(2D横視点ゲーム専用)
 	enum AngleLR{Left, Right};
 	AngleLR angleLR;
@@ -26,7 +32,8 @@ public:
 		pos(0.f, 0.f),
 		hitBase(0, 0, 0, 0),
 		moveVec(0.f, 0.f),
-		angleLR(Right){}
+		angleLR(Right),
+		animCnt(0) {}
 
 	virtual ~BChara(){}
 
