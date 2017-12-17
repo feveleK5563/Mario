@@ -52,7 +52,17 @@ void BChara::CheckMove(ML::Vec2& est)
 
 //-------------------------------------------------------------------
 //足元接触判定
-void BChara::CheckFoot()
+bool BChara::CheckFoot()
 {
+	//当たり判定を基にして足元矩形を生成
+	ML::Box2D foot(	hitBase.x,
+					hitBase.y + hitBase.h,
+					hitBase.w,
+					1);
+	foot.Offset(pos);
 
+	if (auto map = ge->GetTask_One_GN<Map::Object>("フィールド", "マップ"))
+		return map->CheckHit(foot);
+	else
+		return false;
 }

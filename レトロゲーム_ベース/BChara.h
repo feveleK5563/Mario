@@ -17,7 +17,12 @@ public:
 	ML::Vec2	pos;		//キャラクタ位置
 	ML::Box2D	hitBase;	//当たり判定範囲
 	ML::Vec2	moveVec;	//移動ベクトル
-	int			moveCnt;	//行動カウンタ
+
+	//落下速度
+	float fallSpeed;
+
+	//接触判定
+	bool	hitFoot; //足元接触判定
 
 	//アニメーション
 	vector<ML::Box2D*>	charaChip;	//キャラクタの素材
@@ -32,6 +37,8 @@ public:
 		pos(0.f, 0.f),
 		hitBase(0, 0, 0, 0),
 		moveVec(0.f, 0.f),
+		fallSpeed(0),
+		hitFoot(0),
 		angleLR(Right),
 		animCnt(0) {}
 
@@ -43,5 +50,5 @@ public:
 	//めり込まない処理
 	virtual void CheckMove(ML::Vec2& est);
 	//足元接触判定
-	virtual void CheckFoot();
+	virtual bool CheckFoot();
 };
