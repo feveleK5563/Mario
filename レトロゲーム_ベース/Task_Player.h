@@ -48,7 +48,25 @@ namespace  Player
 	public:
 		//追加したい変数・メソッドはここに追加する
 		string		controllerName;
+		enum Animation
+		{
+			Stay,
+			Walk1,
+			Walk2,
+			Walk3,
+			Turn,
+			Jump,
+			Death,
+			Hold1,
+			Hold2,
+		};
+		Animation	marioChip;		//マリオの動作
+		int			transMario;		//マリオの大きさ
+		const Animation	walkAnimTable[4] = { Walk1, Walk2, Walk3, Walk2 };	//歩行アニメーション
+		float		walkAnimTiming;	//歩行アニメーションのタイミング調整
+
 		void ChangeSpeed();
+		void ChangeAnim(const DI::VGamePad&);
 		void ScrollCamera();
 	};
 }

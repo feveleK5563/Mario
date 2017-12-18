@@ -44,6 +44,11 @@ namespace  Player
 		fallSpeed = 0;
 		hitFoot = false;
 		angleLR = Right;
+		animCnt = 0.f;
+
+		marioChip = Stay;
+		transMario = 1;
+		walkAnimTiming = 0.f;
 
 		for (int i = 0; i < 2; ++i)
 		{
@@ -55,7 +60,6 @@ namespace  Player
 					charaChip.emplace_back(new ML::Box2D(j * 16 + 80, 32, 16, 16));
 			}
 		}
-		animCnt = 0;
 
 		//★タスクの生成
 
@@ -96,7 +100,7 @@ namespace  Player
 		ML::Box2D  draw = { -8, -8, 16, 16 };
 		draw.Offset(pos);
 		draw.Offset(-ge->camera2D.x, -ge->camera2D.y);
-		ML::Box2D src = *charaChip[9];
+		ML::Box2D src = *charaChip[marioChip + (transMario * 9)];
 		if (angleLR == Left)
 		{
 			src.x += 16;
@@ -113,38 +117,99 @@ namespace  Player
 
 		ML::Vec2 est = { 0, 0 };
 		//滑らかに横移動
-		if (in.LStick.L.on || (!in.LStick.R.on && moveVec.x > 0)) { est.x += -0.1f + moveVec.x; }
-		if (in.LStick.R.on || (!in.LStick.L.on && moveVec.x < 0)) { est.x +=  0.1f + moveVec.x; }
-		if (moveVec.x > 0.f) { angleLR = Right; }
-		if (moveVec.x < 0.f) { angleLR = Left; }
+		if (in.LStick.L.on || (!in.LStick.R.on && moveVec.x > 0)) {
+			est.x += -0.2f + moveVec.x;
+		}
+		if (in.LStick.R.on || (!in.LStick.L.on && moveVec.x < 0)) {
+			est.x +=  0.2f + moveVec.x;
+		}
+		if (hitFoot) { //向きの変更
+			if (moveVec.x > 0.f) { angleLR = Right; }
+			if (moveVec.x < 0.f) { angleLR = Left; }
+		}
 
-		//0.15未満になったら0に設定する
-		if (fabsf(est.x) < 0.1f) { est.x = 0.f; }
-		//2以上にならないようにする
-		if (est.x >  1.5f) { est.x =  1.5f; }
-		if (est.x < -1.5f) { est.x = -1.5f; }
-
+		//x軸スピードが0.15未満になったら0に設定する
+		if (fabsf(est.x) < 0.1f) {
+			est.x = 0.f;
+		}
+		if (in.B2.on)
+		{
+			//x軸スピードが1.7以上にならないようにする
+			if (est.x >  3.f) { est.x =  3.f; }
+			if (est.x < -3.f) { est.x = -3.f; }
+		}
+		else
+		{
+			//x軸スピードが1.7以上にならないようにする
+			if (est.x >  1.7f) { est.x =  1.7f; }
+			if (est.x < -1.7f) { est.x = -1.7f; }
+		}
 
 		//ジャンプ処理
-		if (in.B1.down && hitFoot) { fallSpeed = -4.5f; }
-		if (in.B1.up && fallSpeed < -1.5f)
-		{
+		if (in.B1.down && hitFoot) {
+			fallSpeed = -5.5f;
+		}
+		if (in.B1.up && fallSpeed < -1.5f) {
 			fallSpeed = -1.5f;
 		}
 		est.y += fallSpeed;
 
-
+		//動作前の座標を保存
 		ML::Vec2 beforePos = pos;
 		//当たり判定付きの動作
-		CheckMove(est);
+		CheckMove(est, true);
 
 		//足元接触判定
-		if (hitFoot = CheckFoot())
+		if (hitFoot = CheckFoot()) {
 			fallSpeed = 0.f;
+		}
 		else
-			fallSpeed += 0.15f;
+			fallSpeed += 0.2f;
 
+		//頭接触判定
+		if (CheckHead())
+			fallSpeed += 1.f;
+
+		//動作前の座標との差から、どの程度マリオが動いたかを記録
 		moveVec = ML::Vec2(pos.x - beforePos.x, pos.y - beforePos.y);
+
+		//マリオのアニメーションを行う
+		ChangeAnim(in);
+	}
+
+	//-------------------------------------------------------------------
+	//マリオのアニメーション
+	void Object::ChangeAnim(const DI::VGamePad& in)
+	{
+		//ジャンプ
+		if (in.B1.down) {
+			marioChip = Jump;
+			return;
+		}
+
+		//以下、地面についているときの処理
+		if (!hitFoot)
+			return;
+
+		//左右移動
+		if (in.LStick.L.on || in.LStick.R.on) {
+			walkAnimTiming += fabsf(moveVec.x);
+			marioChip = walkAnimTable[int(walkAnimTiming / 10.f) % 4];
+		}
+		
+		//動作反転
+		if ((in.LStick.L.on && moveVec.x > 0.f) ||
+			(in.LStick.R.on && moveVec.x < 0.f))
+		{
+			marioChip = Turn;
+			walkAnimTiming = 0.f;
+		}
+
+		//待機
+		if (moveVec.x == 0.f) {
+			marioChip = Stay;
+			walkAnimTiming = 0.f;
+		}
 	}
 
 	//-------------------------------------------------------------------

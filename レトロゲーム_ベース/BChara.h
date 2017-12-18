@@ -14,6 +14,7 @@ public:
 public:
 	//変更可◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇
 	//キャラクタ共通メンバ変数
+
 	ML::Vec2	pos;		//キャラクタ位置
 	ML::Box2D	hitBase;	//当たり判定範囲
 	ML::Vec2	moveVec;	//移動ベクトル
@@ -26,7 +27,7 @@ public:
 
 	//アニメーション
 	vector<ML::Box2D*>	charaChip;	//キャラクタの素材
-	int					animCnt;	//アニメーションカウンタ
+	float				animCnt;	//アニメーションカウンタ
 
 	//左右の向き(2D横視点ゲーム専用)
 	enum AngleLR{Left, Right};
@@ -40,7 +41,7 @@ public:
 		fallSpeed(0),
 		hitFoot(0),
 		angleLR(Right),
-		animCnt(0) {}
+		animCnt(0.f){}
 
 	virtual ~BChara(){}
 
@@ -48,7 +49,11 @@ public:
 	//以下キャラクタ共通メソッド
 
 	//めり込まない処理
-	virtual void CheckMove(ML::Vec2& est);
+	virtual void CheckMove(ML::Vec2&, bool = false);
+	//画面外判定
+	virtual bool CheckOutScreen(const ML::Box2D&, bool);
 	//足元接触判定
 	virtual bool CheckFoot();
+	//頭接触判定
+	virtual bool CheckHead();
 };

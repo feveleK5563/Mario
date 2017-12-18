@@ -6,8 +6,8 @@
 #include "Task_Map.h"
 
 //-------------------------------------------------------------------
-//めり込まない処理
-void BChara::CheckMove(ML::Vec2& est)
+//めり込まない処理(画面外に出ない処理を行う場合はtrueを引数に入力)
+void BChara::CheckMove(ML::Vec2& est, bool noOutScreen)
 {
 	//マップが存在するか調べてからアクセス
 	auto map = ge->GetTask_One_GN<Map::Object>("フィールド", "マップ");
@@ -15,7 +15,6 @@ void BChara::CheckMove(ML::Vec2& est)
 		return;
 
 	float *checkE, *checkP;
-
 	for (int xy = 0; xy < 2; ++xy)
 	{
 		switch (xy)
@@ -41,13 +40,27 @@ void BChara::CheckMove(ML::Vec2& est)
 			else if (*checkE <= -1) { *checkP -= 1.f;		*checkE += 1.f; }
 			else					{ *checkP += *checkE;	*checkE =  0.f; }
 			ML::Box2D hit = hitBase.OffsetCopy(pos);
-			if (map->CheckHit(hit))
+			if (map->CheckHit(hit) || CheckOutScreen(hit, noOutScreen))
 			{
 				*checkP = pre; //移動をキャンセル
 				break;
 			}
 		}
 	}
+}
+
+//-------------------------------------------------------------------
+//画面外判定
+bool BChara::CheckOutScreen(const ML::Box2D& hit, bool noOutScreen)
+{
+	if (!noOutScreen)
+		return false;
+
+	ML::Box2D check = hit.OffsetCopy(-ge->camera2D.x, -ge->camera2D.y);
+	if (check.x < 0)
+		return true;
+
+	return false;
 }
 
 //-------------------------------------------------------------------
@@ -63,6 +76,23 @@ bool BChara::CheckFoot()
 
 	if (auto map = ge->GetTask_One_GN<Map::Object>("フィールド", "マップ"))
 		return map->CheckHit(foot);
+	else
+		return false;
+}
+
+//-------------------------------------------------------------------
+//頭接触判定
+bool BChara::CheckHead()
+{
+	//頭の当たり判定を生成する
+	ML::Box2D head(	hitBase.x,
+					hitBase.y - 1,
+					hitBase.w,
+					1);
+	head.Offset(pos);
+
+	if (auto map = ge->GetTask_One_GN<Map::Object>("フィールド", "マップ"))
+		return map->CheckHit(head);
 	else
 		return false;
 }

@@ -185,6 +185,9 @@ namespace  Map
 		{
 			for (int x = sx; x <= ex; ++x)
 			{
+				if (mapData.map[y][x] == -1)
+					continue;
+
 				switch (mapData.chipType[mapData.map[y][x]])
 				{
 				case 0:
