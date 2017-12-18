@@ -13,7 +13,7 @@ namespace  Title
 	bool  Resource::Initialize()
 	{
 		this->imageName = "TitleLogoImg";
-		DG::Image_Create(this->imageName, "./data/image/Title.bmp");
+		DG::Image_Create(this->imageName, "./data/image/Title.png");
 		return true;
 	}
 	//-------------------------------------------------------------------
@@ -33,7 +33,6 @@ namespace  Title
 		this->res = Resource::Create();
 
 		//★データ初期化
-		this->logoPosY = -270;
 
 		//★タスクの生成
 
@@ -59,16 +58,9 @@ namespace  Title
 	{
 		auto in = DI::GPad_GetState("P1");
 
-		this->logoPosY += 9;
-		if (this->logoPosY >= 0) {
-			this->logoPosY = 0;
-		}
-
-		if (this->logoPosY == 0) {
-			if (in.ST.down) {
-				//自身に消滅要請
-				this->Kill();
-			}
+		if (in.ST.down) {
+			//自身に消滅要請
+			this->Kill();
 		}
 	}
 	//-------------------------------------------------------------------
@@ -76,9 +68,8 @@ namespace  Title
 	void  Object::Render2D_AF()
 	{
 		ML::Box2D  draw(0, 0, 480, 270);
-		ML::Box2D  src(0, 0, 240, 135);
+		ML::Box2D  src(0, 0, 256, 224);
 
-		draw.Offset(0, this->logoPosY);
 		DG::Image_Draw(this->res->imageName, draw, src);
 	}
 
