@@ -2,6 +2,7 @@
 //ゲーム本編
 //-------------------------------------------------------------------
 #include  "MyPG.h"
+#include  "Task_Title.h"
 #include  "Task_Game.h"
 #include  "Task_GameBG.h"
 #include  "Task_Map.h"
@@ -56,6 +57,7 @@ namespace  Game
 
 		if (!ge->QuitFlag() && this->nextTaskCreate) {
 			//★引き継ぎタスクの生成
+			auto nextTask = Title::Object::Create(true);
 		}
 
 		return  true;

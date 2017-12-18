@@ -57,9 +57,16 @@ namespace  Map
 		};
 		MapData mapData;
 
+		enum Check
+		{
+			Nomal,
+			Foot,
+			Head,
+		};
+
 		//マップファイル読み込み
 		bool Load(const string&);
 		//当たり判定
-		bool CheckHit(const ML::Box2D&);
+		bool CheckHit(const ML::Box2D&, const Check check);
 	};
 }

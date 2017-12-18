@@ -159,7 +159,7 @@ namespace  Map
 	}
 	//-------------------------------------------------------------------
 	//当たり判定と動作
-	bool Object::CheckHit(const ML::Box2D& hit)
+	bool Object::CheckHit(const ML::Box2D& hit, const Check check)
 	{
 		RECT r = { hit.x, hit.y, hit.x + hit.w, hit.y + hit.h };
 		//矩形がマップ外に出ていたら丸め込みを行う
@@ -191,6 +191,11 @@ namespace  Map
 				switch (mapData.chipType[mapData.map[y][x]])
 				{
 				case 0:
+					return true;
+
+				case 1:
+					if (check == Head)
+						mapData.map[y][x] = -1;
 					return true;
 
 				default:

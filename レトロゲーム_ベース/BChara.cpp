@@ -40,7 +40,7 @@ void BChara::CheckMove(ML::Vec2& est, bool noOutScreen)
 			else if (*checkE <= -1) { *checkP -= 1.f;		*checkE += 1.f; }
 			else					{ *checkP += *checkE;	*checkE =  0.f; }
 			ML::Box2D hit = hitBase.OffsetCopy(pos);
-			if (map->CheckHit(hit) || CheckOutScreen(hit, noOutScreen))
+			if (map->CheckHit(hit, map->Nomal) || CheckOutScreen(hit, noOutScreen))
 			{
 				*checkP = pre; //移動をキャンセル
 				break;
@@ -75,7 +75,7 @@ bool BChara::CheckFoot()
 	foot.Offset(pos);
 
 	if (auto map = ge->GetTask_One_GN<Map::Object>("フィールド", "マップ"))
-		return map->CheckHit(foot);
+		return map->CheckHit(foot, map->Foot);
 	else
 		return false;
 }
@@ -92,7 +92,7 @@ bool BChara::CheckHead()
 	head.Offset(pos);
 
 	if (auto map = ge->GetTask_One_GN<Map::Object>("フィールド", "マップ"))
-		return map->CheckHit(head);
+		return map->CheckHit(head, map->Head);
 	else
 		return false;
 }
