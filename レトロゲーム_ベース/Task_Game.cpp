@@ -6,6 +6,7 @@
 #include  "Task_Game.h"
 #include  "Task_GameBG.h"
 #include  "Task_Map.h"
+#include  "BChara.h"
 #include  "Task_Player.h"
 
 namespace  Game
@@ -34,6 +35,7 @@ namespace  Game
 
 		//★データ初期化
 		ge->camera2D = ML::Box2D(0, -48, 480, 270);
+		wait = false;
 
 		//★タスクの生成
 		//背景タスク
@@ -68,8 +70,15 @@ namespace  Game
 	{
 		auto in = DI::GPad_GetState("P1");
 
+		if (in.ST.down)
+			wait = !wait;
+
+		if (wait)
+			return;
+		
 		if (auto mario = ge->GetTask_One_GN<Player::Object>("プレイヤ", "マリオ")) {
-			if (mario->ReturnCntTime() > 120) {
+			if (mario->state == BChara::State::Non &&
+				mario->cntTime > 120) { //マリオが死んでから60フレーム後
 				//自身に消滅要請
 				this->Kill();
 		}

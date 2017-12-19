@@ -2,6 +2,7 @@
 //プレイヤ（仮
 //-------------------------------------------------------------------
 #include  "MyPG.h"
+#include  "Task_Game.h"
 #include  "Task_Player.h"
 #include  "Task_Map.h"
 
@@ -37,14 +38,15 @@ namespace  Player
 		controllerName = "P1";
 		render2D_Priority[1] = 0.5f;
 		
-		state = State3;
+		state = State1;
 		pos.x = 480 / 5;
 		pos.y = 270 * 2 / 3;
 		hitBase = { -6, -8, 12, 16 };
 
 		marioChip = Stay;
 		walkAnimTiming = 0.f;
-		goalFlag = false;
+		goalFlag = 0;
+		holdAnimTiming = 0;
 
 		int yh = 0;
 		for (int i = 0; i < 5; ++i)
@@ -84,17 +86,25 @@ namespace  Player
 	//「更新」１フレーム毎に行う処理
 	void  Object::UpDate()
 	{
+		if (auto gm = ge->GetTask_One_GN<Game::Object>("本編", "統括"))
+			if (gm->wait)
+				return;
+
 		if (state == Non)
 		{
 			GameOverEvent();
 			return;
 		}
 
+		//コントローラから入力情報を受け取る
+		in = DI::GPad_GetState(controllerName);
+
 		//プレイヤーの動作
-		Object::ChangeSpeed();
+		SetHitBase();
+		ChangeSpeed();
 
 		//カメラの挙動
-		Object::ScrollCamera();
+		ScrollCamera();
 	}
 	//-------------------------------------------------------------------
 	//「２Ｄ描画」１フレーム毎に行う処理
@@ -109,19 +119,16 @@ namespace  Player
 
 		case State1:
 			draw = { -8, -8, 16, 16 }; 
-			hitBase = { -6, -8, 12, 16 };
 			src = *charaChip[marioChip + 9];
 			break;
 
 		case State2:
 			draw = { -8, -24, 16, 32 };
-			hitBase = { -8, -24, 16, 32 };
 			src = *charaChip[marioChip];
 			break;
 
 		case State3:
 			draw = { -8, -24, 16, 32 };
-			hitBase = { -8, -24, 16, 32 };
 			src = *charaChip[marioChip + 36];
 			break;
 		}
@@ -135,50 +142,81 @@ namespace  Player
 		}
 		DG::Image_Draw(this->res->imageName, draw, src);
 	}
+
+	//-------------------------------------------------------------------
+	//プレイヤー用当たり判定の設定
+	void Object::SetHitBase()
+	{
+		switch (state)
+		{
+		case Non:
+			hitBase = { 0, 0, 0, 0 };
+			break;
+
+		case State1:
+			hitBase = { -6, -8, 12, 16 };
+			break;
+
+		case State2:
+		case State3:
+			if (in.LStick.D.on && !goalFlag)
+				hitBase = { -8, -13, 16, 21 };
+			else
+				hitBase = { -8, -24, 16, 32 };
+			break;
+		}
+	}
+
 	//-------------------------------------------------------------------
 	//スピードの変化
 	void Object::ChangeSpeed()
 	{
-		//コントローラから入力情報を受け取る
-		in = DI::GPad_GetState(controllerName);
-
 		ML::Vec2 est = { 0, 0 };
-		//滑らかに横移動
-		if (in.LStick.L.on || (!in.LStick.R.on && moveVec.x > 0)) {
-			est.x += -0.2f + moveVec.x;
-		}
-		if (in.LStick.R.on || (!in.LStick.L.on && moveVec.x < 0)) {
-			est.x +=  0.2f + moveVec.x;
-		}
-		if (hitFoot) { //向きの変更
-			if (moveVec.x > 0.f) { angleLR = Right; }
-			if (moveVec.x < 0.f) { angleLR = Left; }
-		}
-
-		//x軸スピードが0.15未満になったら0に設定する
-		if (fabsf(est.x) < 0.1f) {
-			est.x = 0.f;
-		}
-		if (in.B2.on)
+		if (!goalFlag)
 		{
-			//x軸スピードが1.7以上にならないようにする
-			if (est.x >  3.f) { est.x =  3.f; }
-			if (est.x < -3.f) { est.x = -3.f; }
+			//滑らかに横移動
+			if (in.LStick.L.on || (!in.LStick.R.on && moveVec.x > 0)) {
+				est.x += -0.2f + moveVec.x;
+			}
+			if (in.LStick.R.on || (!in.LStick.L.on && moveVec.x < 0)) {
+				est.x += 0.2f + moveVec.x;
+			}
+			//向き変更
+			if (hitFoot) {
+				if (in.LStick.R.on) { angleLR = Right; }
+				if (in.LStick.L.on) { angleLR = Left; }
+			}
+
+			//x軸スピードが0.15未満になったら0に設定する
+			if (fabsf(est.x) < 0.1f) {
+				est.x = 0.f;
+			}
+			if (in.B2.on)
+			{
+				//ダッシュ中はx軸スピードが3以上にならないようにする
+				if (est.x >  3.f) { est.x = 3.f; }
+				if (est.x < -3.f) { est.x = -3.f; }
+			}
+			else
+			{
+				//x軸スピードが1.7以上にならないようにする
+				if (est.x >  1.7f) { est.x = 1.7f; }
+				if (est.x < -1.7f) { est.x = -1.7f; }
+			}
+
+			//ジャンプ処理
+			if (in.B1.down && hitFoot) { //ジャンプの初期スピード
+				fallSpeed = -5.5f;
+			}
+			if (in.B1.up && fallSpeed < -1.5f) { //ジャンプボタンを離したときにマリオを落とす
+				fallSpeed = -1.5f;
+			}
 		}
 		else
 		{
-			//x軸スピードが1.7以上にならないようにする
-			if (est.x >  1.7f) { est.x =  1.7f; }
-			if (est.x < -1.7f) { est.x = -1.7f; }
+			GoalEvent(est);
 		}
 
-		//ジャンプ処理
-		if (in.B1.down && hitFoot) { //ジャンプの初期スピード
-			fallSpeed = -5.5f;
-		}
-		if (in.B1.up && fallSpeed < -1.5f) { //ジャンプボタンを離したときにマリオを落とす
-			fallSpeed = -1.5f;
-		}
 		est.y += fallSpeed;
 
 		//動作前の座標を保存
@@ -187,12 +225,23 @@ namespace  Player
 		//当たり判定付きの動作
 		switch (CheckMove(est, true))
 		{
+		case 0:
+			if (goalFlag == 1) {
+				cntTime = 0;
+				goalFlag = 2;
+			}
+			break;
+
 		case 1:		//ゲームオーバー
 			state = Non;
 			return;
 
 		case 2:		//ゲームクリア
-			goalFlag = true;
+			goalFlag = 1;
+			break;
+
+		case 3:
+			state = Non;
 			break;
 		}
 
@@ -218,8 +267,15 @@ namespace  Player
 	//マリオのアニメーション
 	void Object::ChangeAnim()
 	{
+		//ポール捕まり
+		if (0 < goalFlag && goalFlag < 3)
+		{
+			marioChip = holdAnimTable[(holdAnimTiming / 7) % 2];
+			return;
+		}
+
 		//ジャンプ
-		if (in.B1.down) {
+		if (in.B1.down && marioChip != DeathorSquat) {
 			marioChip = Jump;
 			return;
 		}
@@ -229,11 +285,15 @@ namespace  Player
 			return;
 
 		//左右移動
-		if (in.LStick.L.on || in.LStick.R.on) {
+		if (fabsf(moveVec.x) > 0) {
 			walkAnimTiming += fabsf(moveVec.x);
 			marioChip = walkAnimTable[int(walkAnimTiming / 10.f) % 4];
 		}
 		
+		//以下、ゴール後は処理なし
+		if (goalFlag)
+			return;
+
 		//動作反転
 		if ((in.LStick.L.on && moveVec.x > 0.f) ||
 			(in.LStick.R.on && moveVec.x < 0.f))
@@ -242,11 +302,20 @@ namespace  Player
 			walkAnimTiming = 0.f;
 		}
 
+		//しゃがみ
+		if (in.LStick.D.on &&
+			!in.LStick.L.on && !in.LStick.R.on &&
+			(state == State2 || state == State3)) {
+			marioChip = DeathorSquat;
+			return;
+		}
+
 		//待機
 		if (moveVec.x == 0.f) {
 			marioChip = Stay;
 			walkAnimTiming = 0.f;
 		}
+
 	}
 
 	//-------------------------------------------------------------------
@@ -280,16 +349,39 @@ namespace  Player
 
 	//-------------------------------------------------------------------
 	//ゴールイベント
-	void Object::GoalEvent()
+	void Object::GoalEvent(ML::Vec2& est)
 	{
+		switch (goalFlag)
+		{
+		case 1:
+			if (!cntTime) {
+				pos.x += 10.f;
+				angleLR = Right;
+			}
+			if (cntTime > 60) {
+				++holdAnimTiming;
+				pos.y += 1.f;
+			}
+			break;
 
-	}
+		case 2:
+			if (!cntTime) {
+				pos.x += 10.f;
+				angleLR = Left;
+			}
+			if (cntTime > 60) {
+				cntTime = 0;
+				goalFlag = 3;
+				pos.x += 10.f;
+				angleLR = Right;
+			}
+			break;
+		}
 
-	//-------------------------------------------------------------------
-	//cntTimeを返す
-	int Object::ReturnCntTime()
-	{
-		return cntTime;
+		if (0 < goalFlag && goalFlag < 3)
+			++cntTime;
+
+		est.x += 1.f;
 	}
 
 	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★

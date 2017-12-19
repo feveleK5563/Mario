@@ -42,22 +42,22 @@ int BChara::CheckMove(ML::Vec2& est, bool noOutScreen)
 			ML::Box2D hit = hitBase.OffsetCopy(pos);
 
 			int checkHit = 0, outScreen = 0;
-			if ((checkHit = map->CheckHit(hit, map->Nomal)) ||  //マップチップとの当たり判定
-				(outScreen = CheckOutScreen(hit, noOutScreen))) //スクリーンとの当たり判定
-			{
-				if (outScreen == 2)	//画面外下に落下したら
-				{
-					flag = 1;		//ゲームオーバー要請
-					return flag;
+			if ((checkHit = map->CheckHit(hit, map->Nomal)) ||		//マップチップとの当たり判定
+				(outScreen = CheckOutScreen(hit, noOutScreen))) {	//スクリーンとの当たり判定
+
+				if (outScreen == 2) {	//画面外下に落下したら
+					return 1;			//ゲームオーバー要請
 				}
 
-				if (checkHit == 2)	//ポールに当たったら
-				{
-					flag = 2;		//ゲームクリア要請
-					break;
+				*checkP = pre;			//移動をキャンセル
+
+				if (checkHit == 2) {	//ポールに当たったら
+					return 2;			//ゲームクリア要請
 				}
 
-				*checkP = pre; //移動をキャンセル
+				if (checkHit == 3) {	//ゴール砦の入り口に接触
+					return 3;
+				}
 
 				break;
 			}

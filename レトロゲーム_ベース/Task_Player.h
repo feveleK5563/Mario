@@ -61,19 +61,19 @@ namespace  Player
 			Hold1,
 			Hold2,
 		};
-		Animation	marioChip;		//マリオのアニメーション名
-		const Animation	walkAnimTable[4] ={ Walk1, Walk2, Walk3, Walk2 };	//歩行アニメーション
-		float		walkAnimTiming;	//歩行アニメーションのタイミング調整
+		Animation		marioChip;								//マリオのアニメーション名
+		const Animation	walkAnimTable[4] = { Walk1, Walk2, Walk3, Walk2 };	//歩行アニメーション
+		float			walkAnimTiming;							//歩行アニメーションのタイミング調整
 
-		bool goalFlag;				//ゴールしたか否か
+		int				goalFlag;								//ゴールしたか否か
+		const Animation holdAnimTable[2] = { Hold1, Hold2 };	//ポール捕まりアニメーション
+		int				holdAnimTiming;							//捕まりアニメーションのタイミング調整
 
+		void SetHitBase();
 		void ChangeSpeed();
 		void ChangeAnim();
 		void ScrollCamera();
 		void GameOverEvent();
-		void GoalEvent();
-
-		//変数を外部で参照したいときはこれ！！
-		int ReturnCntTime();
+		void GoalEvent(ML::Vec2&);
 	};
 }

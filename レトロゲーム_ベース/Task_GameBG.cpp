@@ -12,7 +12,7 @@ namespace  GameBG
 	bool  Resource::Initialize()
 	{
 		this->imageName = "BGImg";
-		DG::Image_Create(this->imageName, "./data/Image/GameBG.bmp");
+		DG::Image_Create(this->imageName, "./data/Image/GameBG.png");
 		return true;
 	}
 	//-------------------------------------------------------------------

@@ -3,6 +3,7 @@
 //-------------------------------------------------------------------
 #include  "MyPG.h"
 #include  "Task_Map.h"
+#include  "Task_Game.h"
 
 namespace  Map
 {
@@ -80,7 +81,9 @@ namespace  Map
 	//「更新」１フレーム毎に行う処理
 	void  Object::UpDate()
 	{
-
+		if (auto gm = ge->GetTask_One_GN<Game::Object>("本編", "統括"))
+			if (gm->wait)
+				return;
 	}
 	//-------------------------------------------------------------------
 	//「２Ｄ描画」１フレーム毎に行う処理
@@ -180,7 +183,7 @@ namespace  Map
 		ex = (r.right - 1) / 16;
 		ey = (r.bottom -1) / 16;
 		
-		bool checkHit = false;
+		int checkHit = false;
 		//範囲内の障害物を探す
 		for (int y = sy; y <= ey; ++y)
 		{
@@ -191,24 +194,30 @@ namespace  Map
 
 				switch (mapData.chipType[mapData.map[y][x]])
 				{
-				case 0:
-					checkHit = true;
+				case 0: //壊せないし変化しないつまらないブロック
+						checkHit = true;
 					break;
 
 				case 1: //壊せるブロック
 					if (check == Head && canBreak)
 						mapData.map[y][x] = -1; //消す
-					checkHit = true;
+						checkHit = true;
 					break;
 
-				case 2: //アイテムボックス
+				case 2: //はてなボックス
 					if (check == Head)
 						mapData.map[y][x] = 29; //空箱にする
-					checkHit = true;
+						checkHit = true;
 					break;
 
 				case 3: //ポール
-					return 2;
+					if (!checkHit)
+						checkHit = 2;
+					break;
+
+				case 4: //ゴール砦
+					checkHit = 3;
+					break;
 				}
 			}
 		}
