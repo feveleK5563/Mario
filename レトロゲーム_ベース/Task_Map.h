@@ -57,7 +57,7 @@ namespace  Map
 		};
 		MapData mapData;
 
-		enum Check
+		enum Check //身体のどこと判定を行うか判断する
 		{
 			Nomal,
 			Foot,
@@ -67,6 +67,6 @@ namespace  Map
 		//マップファイル読み込み
 		bool Load(const string&);
 		//当たり判定
-		bool CheckHit(const ML::Box2D&, const Check check);
+		int CheckHit(const ML::Box2D&, const Check, bool = false);
 	};
 }

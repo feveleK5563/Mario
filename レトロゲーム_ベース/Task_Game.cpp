@@ -68,10 +68,12 @@ namespace  Game
 	{
 		auto in = DI::GPad_GetState("P1");
 
-		if (in.ST.down) {
-			//自身に消滅要請
-			this->Kill();
+		if (auto mario = ge->GetTask_One_GN<Player::Object>("プレイヤ", "マリオ")) {
+			if (mario->ReturnCntTime() > 120) {
+				//自身に消滅要請
+				this->Kill();
 		}
+	}
 	}
 	//-------------------------------------------------------------------
 	//「２Ｄ描画」１フレーム毎に行う処理

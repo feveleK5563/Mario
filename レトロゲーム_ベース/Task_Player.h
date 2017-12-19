@@ -9,7 +9,7 @@ namespace  Player
 {
 	//タスクに割り当てるグループ名と固有名
 	const  string  defGroupName("プレイヤ");	//グループ名
-	const  string  defName("NoName");	//タスク名
+	const  string  defName("マリオ");	//タスク名
 	//-------------------------------------------------------------------
 	class  Resource
 	{
@@ -48,6 +48,7 @@ namespace  Player
 	public:
 		//追加したい変数・メソッドはここに追加する
 		string		controllerName;
+		DI::VGamePad in;
 		enum Animation
 		{
 			Stay,
@@ -56,17 +57,23 @@ namespace  Player
 			Walk3,
 			Turn,
 			Jump,
-			Death,
+			DeathorSquat,
 			Hold1,
 			Hold2,
 		};
-		Animation	marioChip;		//マリオの動作
-		int			transMario;		//マリオの大きさ
-		const Animation	walkAnimTable[4] = { Walk1, Walk2, Walk3, Walk2 };	//歩行アニメーション
+		Animation	marioChip;		//マリオのアニメーション名
+		const Animation	walkAnimTable[4] ={ Walk1, Walk2, Walk3, Walk2 };	//歩行アニメーション
 		float		walkAnimTiming;	//歩行アニメーションのタイミング調整
 
+		bool goalFlag;				//ゴールしたか否か
+
 		void ChangeSpeed();
-		void ChangeAnim(const DI::VGamePad&);
+		void ChangeAnim();
 		void ScrollCamera();
+		void GameOverEvent();
+		void GoalEvent();
+
+		//変数を外部で参照したいときはこれ！！
+		int ReturnCntTime();
 	};
 }

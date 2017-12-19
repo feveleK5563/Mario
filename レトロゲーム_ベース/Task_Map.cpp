@@ -159,7 +159,7 @@ namespace  Map
 	}
 	//-------------------------------------------------------------------
 	//当たり判定と動作
-	bool Object::CheckHit(const ML::Box2D& hit, const Check check)
+	int Object::CheckHit(const ML::Box2D& hit, const Check check, bool canBreak)
 	{
 		RECT r = { hit.x, hit.y, hit.x + hit.w, hit.y + hit.h };
 		//矩形がマップ外に出ていたら丸め込みを行う
@@ -180,6 +180,7 @@ namespace  Map
 		ex = (r.right - 1) / 16;
 		ey = (r.bottom -1) / 16;
 		
+		bool checkHit = false;
 		//範囲内の障害物を探す
 		for (int y = sy; y <= ey; ++y)
 		{
@@ -191,19 +192,27 @@ namespace  Map
 				switch (mapData.chipType[mapData.map[y][x]])
 				{
 				case 0:
-					return true;
+					checkHit = true;
+					break;
 
-				case 1:
+				case 1: //壊せるブロック
+					if (check == Head && canBreak)
+						mapData.map[y][x] = -1; //消す
+					checkHit = true;
+					break;
+
+				case 2: //アイテムボックス
 					if (check == Head)
-						mapData.map[y][x] = -1;
-					return true;
+						mapData.map[y][x] = 29; //空箱にする
+					checkHit = true;
+					break;
 
-				default:
-					continue;
+				case 3: //ポール
+					return 2;
 				}
 			}
 		}
-		return false;
+		return checkHit;
 	}
 
 	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★

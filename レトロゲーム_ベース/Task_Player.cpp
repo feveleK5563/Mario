@@ -36,29 +36,27 @@ namespace  Player
 		//★データ初期化
 		controllerName = "P1";
 		render2D_Priority[1] = 0.5f;
+		
+		state = State3;
 		pos.x = 480 / 5;
 		pos.y = 270 * 2 / 3;
 		hitBase = { -6, -8, 12, 16 };
-		moveVec.x = 0;
-		moveVec.y = 0;
-		fallSpeed = 0;
-		hitFoot = false;
-		angleLR = Right;
-		animCnt = 0.f;
 
 		marioChip = Stay;
-		transMario = 1;
 		walkAnimTiming = 0.f;
+		goalFlag = false;
 
-		for (int i = 0; i < 2; ++i)
+		int yh = 0;
+		for (int i = 0; i < 5; ++i)
 		{
 			for (int j = 0; j < 9; ++j)
 			{
-				if (i == 0)
-					charaChip.emplace_back(new ML::Box2D(j * 16 + 80, 0, 16, 32));
+				if (!(i % 2))
+					charaChip.emplace_back(new ML::Box2D(j * 16 + 80, yh, 16, 32));
 				else
-					charaChip.emplace_back(new ML::Box2D(j * 16 + 80, 32, 16, 16));
+					charaChip.emplace_back(new ML::Box2D(j * 16 + 80, yh, 16, 16));
 			}
+			yh += (!(i % 2) + 1) * 16;
 		}
 
 		//★タスクの生成
@@ -86,6 +84,12 @@ namespace  Player
 	//「更新」１フレーム毎に行う処理
 	void  Object::UpDate()
 	{
+		if (state == Non)
+		{
+			GameOverEvent();
+			return;
+		}
+
 		//プレイヤーの動作
 		Object::ChangeSpeed();
 
@@ -97,10 +101,33 @@ namespace  Player
 	void  Object::Render2D_AF()
 	{
 		//キャラクタ描画
-		ML::Box2D  draw = { -8, -8, 16, 16 };
+		ML::Box2D  draw, src;
+		switch (state)
+		{
+		case Non:
+			return;
+
+		case State1:
+			draw = { -8, -8, 16, 16 }; 
+			hitBase = { -6, -8, 12, 16 };
+			src = *charaChip[marioChip + 9];
+			break;
+
+		case State2:
+			draw = { -8, -24, 16, 32 };
+			hitBase = { -8, -24, 16, 32 };
+			src = *charaChip[marioChip];
+			break;
+
+		case State3:
+			draw = { -8, -24, 16, 32 };
+			hitBase = { -8, -24, 16, 32 };
+			src = *charaChip[marioChip + 36];
+			break;
+		}
 		draw.Offset(pos);
 		draw.Offset(-ge->camera2D.x, -ge->camera2D.y);
-		ML::Box2D src = *charaChip[marioChip + (transMario * 9)];
+
 		if (angleLR == Left)
 		{
 			src.x += 16;
@@ -113,7 +140,7 @@ namespace  Player
 	void Object::ChangeSpeed()
 	{
 		//コントローラから入力情報を受け取る
-		DI::VGamePad in = DI::GPad_GetState(controllerName);
+		in = DI::GPad_GetState(controllerName);
 
 		ML::Vec2 est = { 0, 0 };
 		//滑らかに横移動
@@ -146,40 +173,50 @@ namespace  Player
 		}
 
 		//ジャンプ処理
-		if (in.B1.down && hitFoot) {
+		if (in.B1.down && hitFoot) { //ジャンプの初期スピード
 			fallSpeed = -5.5f;
 		}
-		if (in.B1.up && fallSpeed < -1.5f) {
+		if (in.B1.up && fallSpeed < -1.5f) { //ジャンプボタンを離したときにマリオを落とす
 			fallSpeed = -1.5f;
 		}
 		est.y += fallSpeed;
 
 		//動作前の座標を保存
 		ML::Vec2 beforePos = pos;
+
 		//当たり判定付きの動作
-		CheckMove(est, true);
+		switch (CheckMove(est, true))
+		{
+		case 1:		//ゲームオーバー
+			state = Non;
+			return;
+
+		case 2:		//ゲームクリア
+			goalFlag = true;
+			break;
+		}
 
 		//足元接触判定
-		if (hitFoot = CheckFoot()) {
+		if (hitFoot = CheckFoot()) { //落下速度を0にする
 			fallSpeed = 0.f;
 		}
 		else
 			fallSpeed += 0.2f;
 
 		//頭接触判定
-		if (CheckHead())
-			fallSpeed += 1.f;
+		if (hitHead = CheckHead(state == State2 || state == State3)) //即落下させる
+			fallSpeed = 1.f;
 
 		//動作前の座標との差から、どの程度マリオが動いたかを記録
 		moveVec = ML::Vec2(pos.x - beforePos.x, pos.y - beforePos.y);
 
 		//マリオのアニメーションを行う
-		ChangeAnim(in);
+		ChangeAnim();
 	}
 
 	//-------------------------------------------------------------------
 	//マリオのアニメーション
-	void Object::ChangeAnim(const DI::VGamePad& in)
+	void Object::ChangeAnim()
 	{
 		//ジャンプ
 		if (in.B1.down) {
@@ -232,6 +269,27 @@ namespace  Player
 			if (ge->camera2D.x < 0) { ge->camera2D.x = 0; } //左端
 			if (ge->camera2D.x > 213 * 16 - ge->camera2D.w) { ge->camera2D.x = 213 * 16 - ge->camera2D.w; } //右端
 		}
+	}
+
+	//-------------------------------------------------------------------
+	//ゲームオーバーイベント
+	void Object::GameOverEvent()
+	{
+		++cntTime;
+	}
+
+	//-------------------------------------------------------------------
+	//ゴールイベント
+	void Object::GoalEvent()
+	{
+
+	}
+
+	//-------------------------------------------------------------------
+	//cntTimeを返す
+	int Object::ReturnCntTime()
+	{
+		return cntTime;
 	}
 
 	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
