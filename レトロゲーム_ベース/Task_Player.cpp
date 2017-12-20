@@ -90,8 +90,8 @@ namespace  Player
 			if (gm->wait)
 				return;
 
-		if (state == Non)
-		{
+		//ゲームオーバー処理
+		if (state == Non) {
 			GameOverEvent();
 			return;
 		}
@@ -99,12 +99,29 @@ namespace  Player
 		//コントローラから入力情報を受け取る
 		in = DI::GPad_GetState(controllerName);
 
-		//プレイヤーの動作
-		SetHitBase();
-		ChangeSpeed();
+		if (!goalFlag) {
+			//マリオの状態変化
+			if (in.B3.down) {
+				if (state == State1)
+					state = State2;
+				else if (state == State2)
+					state = State3;
+				else
+					state = State1;
+			}
 
-		//カメラの挙動
-		ScrollCamera();
+			//プレイヤーの動作
+			SetHitBase();
+			ChangeSpeed();
+
+			//カメラの挙動
+			ScrollCamera();
+		}
+		else {
+			//プレイヤーの動作
+			SetHitBase();
+			ChangeSpeed();
+		}
 	}
 	//-------------------------------------------------------------------
 	//「２Ｄ描画」１フレーム毎に行う処理
@@ -160,9 +177,9 @@ namespace  Player
 		case State2:
 		case State3:
 			if (in.LStick.D.on && !goalFlag)
-				hitBase = { -8, -13, 16, 21 };
+				hitBase = { -6, -13, 12, 21 };
 			else
-				hitBase = { -8, -24, 16, 32 };
+				hitBase = { -6, -24, 12, 32 };
 			break;
 		}
 	}
@@ -268,14 +285,17 @@ namespace  Player
 	void Object::ChangeAnim()
 	{
 		//ポール捕まり
-		if (0 < goalFlag && goalFlag < 3)
-		{
-			marioChip = holdAnimTable[(holdAnimTiming / 7) % 2];
+		if (0 < goalFlag && goalFlag < 3) {
+			marioChip = holdAnimTable[(holdAnimTiming / 5) % 2];
 			return;
+		}
+		else if (goalFlag == 3)
+		{
+			marioChip = Walk3;
 		}
 
 		//ジャンプ
-		if (in.B1.down && marioChip != DeathorSquat) {
+		if (in.B1.down && moveVec.y < 0 && marioChip != DeathorSquat) {
 			marioChip = Jump;
 			return;
 		}
@@ -355,24 +375,24 @@ namespace  Player
 		{
 		case 1:
 			if (!cntTime) {
-				pos.x += 10.f;
+				pos.x += 8.f;
 				angleLR = Right;
 			}
-			if (cntTime > 60) {
+			if (cntTime > 20) {
 				++holdAnimTiming;
-				pos.y += 1.f;
+				pos.y += 1.5f;
 			}
 			break;
 
 		case 2:
 			if (!cntTime) {
-				pos.x += 10.f;
+				pos.x += 13.f;
 				angleLR = Left;
 			}
-			if (cntTime > 60) {
+			if (cntTime > 40) {
 				cntTime = 0;
 				goalFlag = 3;
-				pos.x += 10.f;
+				pos.x += 6.f;
 				angleLR = Right;
 			}
 			break;
@@ -381,7 +401,7 @@ namespace  Player
 		if (0 < goalFlag && goalFlag < 3)
 			++cntTime;
 
-		est.x += 1.f;
+		est.x += 1.5f;
 	}
 
 	//★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★

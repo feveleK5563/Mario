@@ -58,7 +58,6 @@ namespace  Map
 			}
 		}
 		fin.close();
-			
 
 		//šƒ^ƒXƒN‚Ì¶¬
 
